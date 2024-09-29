@@ -1,0 +1,35 @@
+services:
+  dispatch_service:
+    build: .
+    command: >
+      bash -c "python -m dispatch_service.dal.migrate 
+      && uvicorn dispatch_service.main:app --host 0.0.0.0 --port 8000"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; import sys; urllib.request.urlopen('http://localhost:8000/docs')" ]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+
+  taxi_service:
+    build: .
+    command: python -m taxi_service.main
+    deploy:
+      mode: replicated
+      replicas: ${TAXI_SERVICE_REPLICAS:-20}
+    depends_on:
+      dispatch_service:
+        condition: service_healthy
+
+  ride_requester_service:
+    build: .
+    environment:
+      RIDE_REQUESTER_SERVICE_INTERVAL: ${RIDE_REQUESTER_SERVICE_INTERVAL:-30}
+      RIDE_REQUESTER_SERVICE_NUMBER_OF_RIDES: ${RIDE_REQUESTER_SERVICE_NUMBER_OF_RIDES:-2}
+    command: python -m ride_requester_service.main
+    depends_on:
+      dispatch_service:
+        condition: service_healthy

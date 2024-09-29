@@ -1,0 +1,8 @@
+*
+
+!data/
+!common/
+!dispatch_service/
+!ride_requester_service/
+!taxi_service/
+!requirements.txt

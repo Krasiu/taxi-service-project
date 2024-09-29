@@ -1,0 +1,2 @@
+class NoTaxiAvailableError(Exception):
+    pass
